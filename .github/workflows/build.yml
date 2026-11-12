@@ -16,11 +16,21 @@ jobs:
           gradle-version: 8.10.2
       - name: Build
         run: |
-          DIR=$(dirname "$(find . -name settings.gradle -not -path './.git/*' | head -n 1)")
+          S=$(find . -name settings.gradle -not -path './.git/*' | head -n 1)
+          if [ -z "$S" ]; then
+            Z=$(find . -iname '*.zip' -not -path './.git/*' | head -n 1)
+            echo "Zip: $Z"
+            mkdir -p /tmp/src
+            unzip -q "$Z" -d /tmp/src
+            S=$(find /tmp/src -name settings.gradle | head -n 1)
+          fi
+          DIR=$(dirname "$S")
           echo "Build klasoru: $DIR"
           cd "$DIR"
           gradle build --no-daemon
+          mkdir -p "$GITHUB_WORKSPACE/out"
+          cp build/libs/*.jar "$GITHUB_WORKSPACE/out/"
       - uses: actions/upload-artifact@v4
         with:
           name: KurWare-jar
-          path: "**/build/libs/*.jar"
+          path: out/*.jar
